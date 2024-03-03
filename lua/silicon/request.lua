@@ -58,8 +58,8 @@ request.exec = function(range, show_buffer, copy_to_board)
 "base16-256"}
 
 	if string.lower(opts.theme) == "auto" or not(vim.tbl_contains(default_themes, opts.theme)) then
-		if utils._os_capture("silicon --version") ~= "silicon 0.5.1" then
-			vim.notify("silicon v0.5.1 is required for automagically creating theme", vim.log.levels.ERROR)
+		if string.match(utils._os_capture("silicon --version"), "%d+%.%d+%.%d+") < "0.5.1" then
+			vim.notify("silicon v0.5.1 or higher is required for automagically creating theme", vim.log.levels.ERROR)
 			return
 		end
 		opts.theme = vim.g.colors_name .. "_" .. vim.o.background
@@ -121,13 +121,15 @@ request.exec = function(range, show_buffer, copy_to_board)
 			table.insert(args, "--highlight-lines")
 			table.insert(args, fmt("%s-%s", starting + 1, ending))
 		end
-		if copy_to_board and vim.fn.executable("wl-copy") == 0 then
-			table.insert(args, "--to-clipboard")
-		elseif vim.fn.executable("wl-copy") == 1 and copy_to_board then
+		if copy_to_board then
+      if os.getenv("XDG_SESSION_TYPE") == "x11" then
+        table.insert(args, "--to-clipboard")
+      elseif vim.fn.executable("wl-copy") == 1 then
 			-- Save output to /tmp then copy from there
-			table.insert(args, "--output")
-			opts.output = utils._replace_placeholders("/tmp/SILICON_${year}-${month}-${date}_${time}.png")
-			table.insert(args, opts.output)
+        table.insert(args, "--output")
+        opts.output = utils._replace_placeholders("/tmp/SILICON_${year}-${month}-${date}_${time}.png")
+        table.insert(args, opts.output)
+      end
 		else
 			table.insert(args, "--output")
 			table.insert(args, opts.output)
